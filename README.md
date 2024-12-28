@@ -491,3 +491,184 @@ Require approvals for specific branches in merge requests.
 
 By understanding and implementing these branching concepts, teams can establish robust workflows, minimize conflicts, and ensure code quality across all stages of development.
 
+---
+
+# Use Cases of Default Variables in GitLab
+
+GitLab CI/CD provides default environment variables that are predefined for each pipeline run. These variables are accessible in `.gitlab-ci.yml` and are useful for customizing and automating pipeline behavior.
+
+---
+
+## Table of Contents
+1. [What are Default Variables?](#1-what-are-default-variables)
+2. [Key Use Cases](#2-key-use-cases)
+   - [Pipeline Metadata](#21-pipeline-metadata)
+   - [Branch-Specific Behavior](#22-branch-specific-behavior)
+   - [Dynamic Job Names](#23-dynamic-job-names)
+   - [Conditional Execution](#24-conditional-execution)
+   - [Triggering Downstream Pipelines](#25-triggering-downstream-pipelines)
+3. [Example Configuration](#3-example-configuration)
+4. [Common Default Variables](#4-common-default-variables)
+
+---
+
+## 1. What are Default Variables?
+Default variables are environment variables automatically set by GitLab during pipeline execution. These variables provide context about the repository, branch, commit, job, and pipeline.
+
+### Example Variables:
+- `$CI_COMMIT_BRANCH`: The branch name of the pipeline.
+- `$CI_JOB_NAME`: The name of the running job.
+- `$CI_PROJECT_PATH`: The path of the project.
+- `$CI_PIPELINE_ID`: The unique ID of the pipeline.
+
+---
+
+## 2. Key Use Cases
+
+### 2.1. Pipeline Metadata
+Default variables provide metadata about the pipeline, which can be used for logging, artifact naming, or debugging.
+
+#### Example:
+```yaml
+stages:
+  - build
+
+build-job:
+  stage: build
+  script:
+    - echo "Pipeline ID: $CI_PIPELINE_ID"
+    - echo "Commit SHA: $CI_COMMIT_SHA"
+```
+#### Use Case:
+- Log pipeline information for debugging or auditing.
+- Name build artifacts with unique pipeline identifiers.
+
+---
+
+### 2.2. Branch-Specific Behavior
+Execute jobs conditionally based on the branch being built.
+
+#### Example:
+```yaml
+stages:
+  - deploy
+
+deploy-job:
+  stage: deploy
+  script:
+    - if [ "$CI_COMMIT_BRANCH" = "main" ]; then echo "Deploying to production"; fi
+    - if [ "$CI_COMMIT_BRANCH" != "main" ]; then echo "Skipping deployment"; fi
+```
+#### Use Case:
+- Deploy code only for specific branches (e.g., `main`, `staging`).
+- Trigger different behaviors for feature branches.
+
+---
+
+### 2.3. Dynamic Job Names
+Create dynamic job names or messages based on variables.
+
+#### Example:
+```yaml
+stages:
+  - test
+
+test-job:
+  stage: test
+  script:
+    - echo "Running tests for branch: $CI_COMMIT_BRANCH"
+```
+#### Use Case:
+- Provide meaningful logs for better traceability.
+- Adapt job names/messages to current context.
+
+---
+
+### 2.4. Conditional Execution
+Run specific scripts or commands based on variable values.
+
+#### Example:
+```yaml
+stages:
+  - build
+  - deploy
+
+build-job:
+  stage: build
+  script:
+    - if [ "$CI_PROJECT_PATH" = "group/project" ]; then echo "Building project"; fi
+```
+#### Use Case:
+- Customize behavior based on the project, branch, or environment.
+- Skip jobs for specific conditions.
+
+---
+
+### 2.5. Triggering Downstream Pipelines
+Use variables to pass pipeline context to downstream projects.
+
+#### Example:
+```yaml
+stages:
+  - trigger
+
+trigger-downstream:
+  stage: trigger
+  trigger:
+    project: group/another-project
+    branch: "$CI_COMMIT_BRANCH"
+```
+#### Use Case:
+- Propagate branch or commit details to downstream pipelines.
+- Automate multi-repository workflows.
+
+---
+
+## 3. Example Configuration
+Here’s a full example that demonstrates the use of default variables:
+
+```yaml
+stages:
+  - build
+  - test
+  - deploy
+
+build-job:
+  stage: build
+  script:
+    - echo "Building project: $CI_PROJECT_NAME"
+    - echo "Running on branch: $CI_COMMIT_BRANCH"
+
+test-job:
+  stage: test
+  script:
+    - echo "Testing commit: $CI_COMMIT_SHA"
+    - echo "Pipeline URL: $CI_PIPELINE_URL"
+
+deploy-job:
+  stage: deploy
+  script:
+    - if [ "$CI_COMMIT_BRANCH" = "main" ]; then echo "Deploying to production"; fi
+    - if [ "$CI_COMMIT_BRANCH" != "main" ]; then echo "Skipping deployment"; fi
+```
+
+---
+
+## 4. Common Default Variables
+Here are some commonly used default variables and their purposes:
+
+| **Variable**              | **Description**                            |
+|---------------------------|--------------------------------------------|
+| `$CI_COMMIT_BRANCH`       | Name of the branch being built.            |
+| `$CI_COMMIT_SHA`          | Commit SHA for the current pipeline.       |
+| `$CI_JOB_NAME`            | Name of the running job.                   |
+| `$CI_PIPELINE_ID`         | Unique ID of the pipeline.                 |
+| `$CI_PROJECT_NAME`        | Name of the project.                       |
+| `$CI_PROJECT_PATH`        | Path of the project, including namespace.  |
+| `$CI_PIPELINE_URL`        | URL to view the pipeline in GitLab.        |
+
+---
+
+By leveraging GitLab's default variables, you can build flexible, dynamic, and efficient CI/CD pipelines tailored to your workflows.
+
+---
