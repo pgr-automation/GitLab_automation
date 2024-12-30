@@ -1,0 +1,10 @@
+variables:
+  IMAGE_TAG: $CI_COMMIT_SHA
+
+test-vars:
+  only:
+   - feature/* 
+  script: |
+    - git fetch --tags                # Ensure all tags are available
+    - IMAGE_TAG=$(git describe --tags --abbrev=0)
+    - echo "IMAGE_TAG: $IMAGE_TAG"

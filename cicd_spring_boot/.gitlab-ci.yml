@@ -1,0 +1,30 @@
+image: openjdk:8-jdk
+##
+
+stages:
+  - build
+  - test
+  - package
+  - docker_build
+  - deploy
+  - rollback
+
+variables:
+   DOCKER_IMAGE: 9902736822/springboot
+
+before_script:
+  - cd spring-bootapp
+
+cache:
+  paths:
+    - .m2/repository
+
+workflow:
+  rules:
+    - if: '$CI_COMMIT_REF_NAME == "main"' 
+build:
+  stage: build
+  script: |
+    export MAVEN_OPTS="--add-opens java.base/java.lang=ALL-UNNAMED"
+    mvn clean package -DskipTests
+   

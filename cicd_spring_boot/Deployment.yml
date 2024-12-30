@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: springboot
+  labels:
+    app: springboot
+    tier: dev
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: springboot
+      tier: dev
+
+  template:
+    metadata:
+      name: springboot
+      labels:
+        app: springboot
+        tier: dev
+    spec:
+      containers:
+        - name: springbootapp
+          image: release-image
+          ports:
+          - containerPort: 8080
+          volumeMounts:
+          - mountPath: /etc/hosts
+            name: hostsmount
+      volumes:
+        - name: hostsmount
+          hostPath:
+            path: /etc/hosts
