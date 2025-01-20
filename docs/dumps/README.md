@@ -203,3 +203,33 @@ push:
   only:
     - branches
 ```
+# Steps to Resolve the 403 Error:
+
+```text
+Steps to Resolve the 403 Error:
+
+    Check GitLab CI Token Permissions:
+        The GitLab CI runner uses a token (in your case, gitlab-ci-token:[MASKED]) to authenticate. This token may not have sufficient permissions to push code to the repository.
+        Ensure that the user associated with the GitLab CI token has permission to push to the repository.
+
+    Ensure Correct Access Rights:
+        Check the access rights of the GitLab CI token. Go to your GitLab project, then navigate to Settings > CI / CD > Secret Variables, and confirm that the user or token you're using has the correct permissions to push code.
+
+    Update CI/CD Configuration:
+        Sometimes, you may need to explicit
+
+Solution Using Personal Access Token (PAT):
+
+    Generate a Personal Access Token (PAT):
+        Go to your GitLab account.
+        Navigate to Profile > Preferences > Access Tokens.
+        Generate a token with write_repository permission (this gives permission to push changes to the repository).
+
+    Set the Token in GitLab CI/CD Environment Variables:
+        Go to Project Settings > CI / CD > Variables.
+        Add a new variable CI_JOB_TOKEN with the value being the personal access token you generated.
+
+    Modify .gitlab-ci.yml to Use the Token:
+        Use the token in the git push command as follows:
+
+```
