@@ -163,45 +163,72 @@ stages:
 
 variables:
   IMAGE_NAME: registry.pgr.com/my-application # Replace with your registry/image name
-  VERSION_FILE: VERSION
+  VERSION_FILE: VERSION # Version file location
+  NODE_VERSION: v18.0 # Node.js version for tagging
 
 build:
   stage: build
   script:
     - echo "Building Docker image..."
-    - docker build -t $IMAGE_NAME:latest .
   only:
     - branches
+  tags:
+    - k8s-runner
 
 tag:
   stage: tag
   script:
     - echo "Generating new version..."
-    # Increment the version
+    # Ensure VERSION file exists
+    - if [ ! -f $VERSION_FILE ]; then echo "0.0.0" > $VERSION_FILE; fi
+    # Safely parse the version
+    - cat $VERSION_FILE
     - OLD_VERSION=$(cat $VERSION_FILE)
-    - IFS='.' read -r MAJOR MINOR PATCH <<< "$OLD_VERSION"
-    - PATCH=$((PATCH + 1))
+    - MAJOR=$(echo $OLD_VERSION | cut -d. -f1)
+    - MINOR=$(echo $OLD_VERSION | cut -d. -f2)
+    - PATCH=$(echo $OLD_VERSION | cut -d. -f3)
+    - PATCH=$((PATCH + 1)) # Increment the patch version
     - NEW_VERSION="$MAJOR.$MINOR.$PATCH"
     - echo $NEW_VERSION > $VERSION_FILE
-    - echo "New version: $NEW_VERSION"
-    # Commit the updated version file
-    - git config user.name "GitLab CI"
-    - git config user.email "ci@example.com"
+    - echo $NEW_VERSION  
+    # Prepare Docker tag
+    - BRANCH_NAME=${CI_COMMIT_REF_NAME//\//-}
+    - echo $BRANCH_NAME
+    - IMAGE_TAG="$BRANCH_NAME-node:$NEW_VERSION"
+    - echo $IMAGE_TAG
+    # Save tag for next stage
+    - echo $IMAGE_TAG > image_tag.txt
+    - echo "Commit updated version file"
+    # Install Git if not available
+    - apk update && apk add git
+     # Check if the branch exists locally
+    - git fetch
+    - git branch -a
+    - if ! git show-ref --verify --quiet refs/heads/$CI_COMMIT_REF_NAME; then git checkout -b $CI_COMMIT_REF_NAME; fi
+    # Configure Git and commit changes
+    - git config user.name "pgr-automation"
+    - git config user.email "grprashanth94@gmail.com"
     - git add $VERSION_FILE
-    - git commit -m "CI: Increment version to $NEW_VERSION"
-    - git push origin $CI_COMMIT_REF_NAME
-    # Tag the Docker image
-    - docker tag $IMAGE_NAME:latest $IMAGE_NAME:$NEW_VERSION
-
+    - git commit -m "Increment version to $IMAGE_TAG [ci skip]"
+    - git push http://gitlab-ci-token:${CI_JOB_TOKEN}@192.168.1.120/root/cicd-test.git $CI_COMMIT_REF_NAME 
+  artifacts:
+    paths:
+      - image_tag.txt
+  tags:
+    - k8s-runner
+#
 push:
   stage: push
   script:
     - echo "Pushing Docker image to registry..."
-    - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
-    - docker push $IMAGE_NAME:latest
-    - docker push $IMAGE_NAME:$NEW_VERSION
+    - IMAGE_TAG=$(cat image_tag.txt)
+    # - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
+    # - docker push $IMAGE_NAME:$IMAGE_TAG
   only:
     - branches
+  tags:
+    - k8s-runner
+#
 ```
 # Steps to Resolve the 403 Error:
 
